@@ -103,9 +103,28 @@ public class Renderer : IDisposable
             Log.Warn($"Anisotropic filter should be paired with trilinear filtering (you have {config.Render.Filter.Texture.Value}), you will not get the best results!");
     }
 
+    private int m_lastGameTicker = -1;
+
+    private int GetLastGameTicker(RenderCommands renderCommands)
+    {
+        for (int i = 0; i < renderCommands.Commands.Count; i++)
+        {
+            if (renderCommands.Commands[i].Type == RenderCommandType.World)
+                return renderCommands.WorldCommands[renderCommands.Commands[i].Index].World.GameTicker;
+        }
+
+        return 0;
+    }
+
     public void Render(RenderCommands renderCommands)
     {
-        m_hudRenderer.Clear();
+        int gameTicker = GetLastGameTicker(renderCommands);
+
+        if (gameTicker != m_lastGameTicker)
+        {
+            m_hudRenderer.Clear();
+            m_lastGameTicker = gameTicker;
+        }
 
         if (UseVirtualResolution)
             SetupAndBindVirtualFramebuffer();

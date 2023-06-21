@@ -52,11 +52,17 @@ public partial class WorldLayer
     private int m_mapHeaderFontSize = MapFontSize;
     private Dimension m_viewport;
     private readonly List<(string message, float alpha)> m_messages = new();
+    private int m_lastGameTick = -1;
 
     private readonly record struct HudDrawWeapon(IHudRenderContext Hud, FrameState FrameState, int yOffset);
 
     private void DrawHud(HudRenderContext hudContext, IHudRenderContext hud, bool automapVisible)
     {
+        if (m_lastGameTick == World.GameTicker)
+            return;
+
+        m_lastGameTick = World.GameTicker;
+
         m_scale = (float)m_config.Hud.Scale.Value;
         m_infoFontSize = Math.Max((int)(m_scale * DebugFontSize), 12);
         m_mapHeaderFontSize = Math.Max((int)(m_scale * MapFontSize), 20);

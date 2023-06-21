@@ -44,6 +44,7 @@ public class RenderCommands
     public readonly IConfig Config;
     public readonly IImageDrawInfoProvider ImageDrawInfoProvider;
     public readonly FpsTracker FpsTracker;
+    public int GameTicker;
     public ResolutionInfo ResolutionInfo { get; private set; }
     private Dimension m_windowDimensions;
     private Vec2D m_scale = Vec2D.One;
