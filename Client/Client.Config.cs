@@ -1,3 +1,4 @@
+using Helion.Util.Configs.Impl;
 using Helion.World.Entities.Players;
 
 namespace Helion.Client;
@@ -9,6 +10,7 @@ public partial class Client
         m_config.Audio.MusicVolume.OnChanged += MusicVolume_OnChanged;
         m_config.Audio.SoundVolume.OnChanged += SoundVolume_OnChanged;
         m_config.Mouse.Look.OnChanged += Look_OnChanged;
+        m_config.Render.MaxFPS.OnChanged += MaxFPS_OnChanged;
     }
 
     private void Look_OnChanged(object? sender, bool set)
@@ -24,6 +26,7 @@ public partial class Client
         m_config.Audio.MusicVolume.OnChanged -= MusicVolume_OnChanged;
         m_config.Audio.SoundVolume.OnChanged -= SoundVolume_OnChanged;
         m_config.Mouse.Look.OnChanged -= Look_OnChanged;
+        m_config.Render.MaxFPS.OnChanged -= MaxFPS_OnChanged;
     }
 
     private void SoundVolume_OnChanged(object? sender, double volume) =>

@@ -48,7 +48,8 @@ public class Window : GameWindow, IWindow
         m_inputManagement = inputManagement;
         CursorState = config.Mouse.Focus ? CursorState.Grabbed : CursorState.Hidden;
         Renderer = new(this, config, archiveCollection, tracker);
-        RenderFrequency = config.Render.MaxFPS;
+        RenderFrequency = 0;
+        UpdateFrequency = config.Render.UpdateFrequency;
         SetVsync(config.Render.VSync.Value);
 
         KeyDown += Window_KeyDown;
@@ -59,8 +60,8 @@ public class Window : GameWindow, IWindow
         MouseWheel += Window_MouseWheel;
         TextInput += Window_TextInput;
 
-        m_config.Render.MaxFPS.OnChanged += OnMaxFpsChanged;
         m_config.Render.VSync.OnChanged += OnVSyncChanged;
+        m_config.Render.UpdateFrequency.OnChanged += UpdateFrequency_OnChanged;
     }
 
     private void SetVsync(RenderVsyncMode mode)
@@ -217,9 +218,9 @@ public class Window : GameWindow, IWindow
         m_inputManager.AddMouseMovement((x, y));
     }
 
-    private void OnMaxFpsChanged(object? sender, int maxFps)
+    private void UpdateFrequency_OnChanged(object? sender, int value)
     {
-        RenderFrequency = maxFps;
+        UpdateFrequency = value;
     }
 
     private void OnVSyncChanged(object? sender, RenderVsyncMode mode)
@@ -240,7 +241,6 @@ public class Window : GameWindow, IWindow
         MouseWheel -= Window_MouseWheel;
         TextInput -= Window_TextInput;
 
-        m_config.Render.MaxFPS.OnChanged -= OnMaxFpsChanged;
         m_config.Render.VSync.OnChanged -= OnVSyncChanged;
 
         m_disposed = true;

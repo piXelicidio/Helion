@@ -34,6 +34,7 @@ namespace Helion.Client;
 
 public partial class Client : IDisposable, IInputManagement
 {
+    private const int StopwatchFrequencyValue = 1000000;
     private static readonly Logger Log = LogManager.GetCurrentClassLogger();
     private static readonly AppInfo AppInfo = new();
 
@@ -50,6 +51,8 @@ public partial class Client : IDisposable, IInputManagement
     private readonly ConsoleCommands m_consoleCommands = new();
     private readonly Profiler m_profiler = new();
     private readonly Ticker m_ticker = new(Constants.TicksPerSecond);
+    private readonly Stopwatch m_fpsLimit = new Stopwatch();
+    private int m_fpsLimitValue = 0;
     private bool m_disposed;
     private bool m_takeScreenshot;
 
@@ -74,9 +77,23 @@ public partial class Client : IDisposable, IInputManagement
         m_console.OnConsoleCommandEvent += Console_OnCommand;
         m_window.RenderFrame += Window_MainLoop;
 
+        SetMaxFps(config.Render.MaxFPS.Value);
+
         SetMouseRawInput();
         RegisterConfigChanges();
         m_ticker.Start();
+    }
+
+    private void MaxFPS_OnChanged(object? sender, int e)
+    {
+        SetMaxFps(e);
+    }
+
+    private void SetMaxFps(int value)
+    {
+        if (value > 0)
+            m_fpsLimitValue = StopwatchFrequencyValue / value;
+        m_fpsLimit.Start();
     }
 
     private unsafe void SetMouseRawInput()
@@ -175,8 +192,16 @@ public partial class Client : IDisposable, IInputManagement
         m_profiler.Render.Total.Stop();
     }
 
+    private bool ShouldRender() =>
+        m_fpsLimitValue <= 0 || m_fpsLimit.ElapsedTicks * StopwatchFrequencyValue / Stopwatch.Frequency >= m_fpsLimitValue;
+
     private void Window_MainLoop(FrameEventArgs frameEventArgs)
     {
+        if (!ShouldRender())
+            return;
+
+        m_fpsLimit.Restart();
+
         m_profiler.ResetTimers();
         m_profiler.Global.Start();
 

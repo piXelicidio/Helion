@@ -44,6 +44,17 @@ public class ConfigRender
         };
     });
 
+    [ConfigInfo("A cap on the maximum input processing per second. Zero is equivalent to no cap.")]
+    public readonly ConfigValue<int> UpdateFrequency = new(250, value =>
+    {
+        return value switch
+        {
+            <= 0 => 0,
+            < 35 => 35,
+            _ => value
+        };
+    });
+
     [ConfigInfo("The multisampling amount. A value of 1 is the same as being off.")]
     public readonly ConfigValue<int> Multisample = new(1, GreaterOrEqual(1));
 
