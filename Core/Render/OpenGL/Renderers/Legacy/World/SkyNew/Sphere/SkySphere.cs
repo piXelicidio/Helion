@@ -5,6 +5,7 @@ using Helion.Render.OpenGL.Buffer.Array.Vertex;
 using Helion.Render.OpenGL.Shared;
 using Helion.Render.OpenGL.Vertex;
 using Helion.Util;
+using OpenTK.Graphics.OpenGL;
 
 namespace Helion.Render.OpenGL.Renderers.Legacy.World.SkyNew.Sphere;
 
@@ -15,32 +16,26 @@ public class SkySphere : IDisposable
     private const int VerticalSpherePoints = 32;
     private static readonly vec3 UpOpenGL = new(0, 1, 0);
 
-    public readonly VertexArrayObject Vao;
     private readonly StaticVertexBuffer<SkySphereVertex> m_vbo;
+    private readonly VertexArrayObject m_vao;
+    private readonly SkySphereProgram m_program;
     private bool m_disposed;
 
     public SkySphere()
     {
-        Vao = new("Sky sphere");
         m_vbo = new("Sky sphere", HorizontalSpherePoints * VerticalSpherePoints);
+        m_vao = new("Sky sphere");
+        Attributes.BindAndApply(m_vbo, m_vao, m_program.Attributes);
 
-        throw new NotImplementedException("Attribute bindings TODO"); //Attributes.BindAndApply(m_vbo, Vao, m_program.Attributes);
-
-        GenerateSphereVerticesAndUpload();
+        GenerateAndUploadSphereVertices();
     }
 
     ~SkySphere()
     {
-        ReleaseUnmanagedResources();
+        PerformDispose();
     }
 
-    public void Dispose()
-    {
-        ReleaseUnmanagedResources();
-        GC.SuppressFinalize(this);
-    }
-
-    public static mat4 CalculateMvp(RenderInfo renderInfo)
+    private static mat4 CalculateMvp(RenderInfo renderInfo)
     {
         // Note that this means we've hard coded the sky to always render
         // the same regardless of the field of view.
@@ -60,8 +55,8 @@ public class SkySphere : IDisposable
         // our body upwards by 20% (so 0.1 units since r = 0.5) so prevent
         // the horizon from appearing.
         Vec3F direction = renderInfo.Camera.Direction;
-        vec3 pos = new vec3(0.0f, 0.1f, 0.0f);
-        vec3 eye = new vec3(direction.X, direction.Z, -direction.Y);
+        vec3 pos = new(0.0f, 0.1f, 0.0f);
+        vec3 eye = new(direction.X, direction.Z, -direction.Y);
         mat4 view = mat4.LookAt(pos, pos + eye, UpOpenGL);
 
         // Our projection far plane only goes as far as the scaled sphere
@@ -71,7 +66,7 @@ public class SkySphere : IDisposable
         return projection * view * model;
     }
 
-    private void GenerateSphereVerticesAndUpload()
+    private void GenerateAndUploadSphereVertices()
     {
         SphereTable sphereTable = new(HorizontalSpherePoints, VerticalSpherePoints);
 
@@ -101,12 +96,41 @@ public class SkySphere : IDisposable
         m_vbo.UploadIfNeeded();
     }
 
-    private void ReleaseUnmanagedResources()
+    public void Render(RenderInfo renderInfo, SkyTexture texture, bool flipped)
+    {
+        mat4 mvp = CalculateMvp(renderInfo);
+
+        GL.ActiveTexture(TextureUnit.Texture0);
+        texture.Texture.Bind();
+        
+        m_program.Bind();
+        m_program.BoundTexture(TextureUnit.Texture0);
+        m_program.HasInvulnerability(renderInfo.ViewerEntity.IsInvulnerable);
+        m_program.Mvp(mvp);
+        m_program.ScaleU(texture.ScaleU);
+        m_program.FlipU(flipped);
+        
+        m_vao.Bind();
+        m_vbo.DrawArrays();
+        m_vao.Unbind();
+        
+        m_program.Unbind();
+        
+        texture.Texture.Unbind();
+    }
+    
+    public void Dispose()
+    {
+        PerformDispose();
+        GC.SuppressFinalize(this);
+    }
+
+    private void PerformDispose()
     {
         if (m_disposed)
             return;
         
-        Vao.Dispose();
+        m_vao.Dispose();
         m_vbo.Dispose();
 
         m_disposed = true;
