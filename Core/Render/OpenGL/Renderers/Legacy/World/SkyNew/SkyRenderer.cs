@@ -57,11 +57,12 @@ public class SkyRenderer : IDisposable
             return new(m_nextAvailableHandleIdx - 1);
         
         Debug.Assert(m_nextAvailableHandleIdx == m_skyHandleToGeometry.Length, "Sky handle-to-geometry desync");
-        SkyGeometry geometry = new();
-        m_skyHandleToGeometry.Add(geometry);
         
         handle = new(m_nextAvailableHandleIdx++);
         m_nameToHandle[lookupName] = handle;
+        
+        SkyGeometry geometry = new(handle, lookupName);
+        m_skyHandleToGeometry.Add(geometry);
         
         return handle;
     }
