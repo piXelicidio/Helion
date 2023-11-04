@@ -5,7 +5,6 @@ namespace Helion.Render.OpenGL.Renderers.Legacy.World.SkyNew;
 
 public class SkyGeometry : IDisposable
 {
-    //private readonly Dictionary<int, (Color Upper, Color Lower)> m_textureIdToFadeColors = new();
     private bool m_disposed;
 
     public bool HasGeometry => false;
@@ -15,12 +14,7 @@ public class SkyGeometry : IDisposable
         PerformDispose();
     }
 
-    public void RenderWorldGeometry(RenderInfo renderInfo)
-    {
-        // TODO
-    }
-
-    public void RenderSky(RenderInfo renderInfo)
+    public void RenderGeometry(RenderInfo info)
     {
         // TODO
     }
