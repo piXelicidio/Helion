@@ -12,6 +12,7 @@ using Helion.Render.Common.Enums;
 using Helion.Render.Common.Renderers;
 using Helion.Resources;
 using Helion.Util.Configs;
+using Helion.Util.Configs.Components;
 using Helion.Util.Configs.Extensions;
 using Helion.Util.Configs.Options;
 using Helion.Util.Configs.Values;
@@ -33,32 +34,62 @@ public class OptionsLayer : IGameLayer
     private readonly GameLayerManager m_manager;
     private readonly IConfig m_config;
     private readonly SoundManager m_soundManager;
+    private readonly IWindow m_window;
     private readonly List<IOptionSection> m_sections;
-    private readonly MenuPositionList m_backForwardPos = new();
+    private readonly BoxList m_backForwardPos = new();
+    private Dimension m_windowSize;
     private Vec2I m_cursorPos;
     private int m_currentSectionIndex;
     private int m_scrollOffset;
-    private int m_windowHeight;
     private int m_headerHeight;
     private int m_messageTicks;
     private string m_message = string.Empty;
     private string m_sectionMessage = string.Empty;
     private bool m_locked;
+    private bool m_resetMouse;
+    private bool m_setMouse;
 
-    public OptionsLayer(GameLayerManager manager, IConfig config, SoundManager soundManager)
+    public OptionsLayer(GameLayerManager manager, IConfig config, SoundManager soundManager, IWindow window)
     {
         m_manager = manager;
         m_config = config;
         m_soundManager = soundManager;
+        m_window = window;
         m_sections = GenerateSections();
+
+        m_config.Window.State.OnChanged += WindowState_OnChanged;
+        m_config.Window.Virtual.Enable.OnChanged += WindowVirtualEnable_OnChanged;
+        m_config.Window.Virtual.Dimension.OnChanged += WindowVirtualDimension_OnChanged;
     }
 
-    public Vec2I GetMouseStartPosition(IWindow window)
+    public void OnShow()
     {
-        // Set start position under header if not set, otherwise set to the position it was before
-        if (m_cursorPos == Vec2I.Zero)
-            m_cursorPos = (window.Dimension.Width / 2, m_config.Hud.GetScaled(45));
-        return m_cursorPos;
+        if (m_currentSectionIndex < m_sections.Count)
+            m_sections[m_currentSectionIndex].OnShow();
+    }
+
+    public void SetMouseStartPosition()
+    {
+        m_resetMouse = m_cursorPos == Vec2I.Zero;
+        m_setMouse = true;
+    }
+
+    private void WindowVirtualDimension_OnChanged(object? sender, Dimension e) => HandleResize();
+
+    private void WindowVirtualEnable_OnChanged(object? sender, bool e) => HandleResize();
+
+    private void WindowState_OnChanged(object? sender, RenderWindowState e) => HandleResize();
+
+    private void HandleResize()
+    {
+        m_resetMouse = true;
+        m_scrollOffset = 0;
+    }
+
+    private void ResetMousePosition(IHudRenderContext hud)
+    {
+        m_cursorPos = (hud.Dimension.Width / 2, m_config.Hud.GetScaled(45));
+        m_window.SetMousePosition(m_cursorPos);
     }
 
     private List<(IConfigValue, OptionMenuAttribute, ConfigInfoAttribute)> GetAllConfigFields()
@@ -167,9 +198,15 @@ public class OptionsLayer : IGameLayer
             sections.Add(optionSection);
             optionSection.OnLockChanged += OptionSection_OnLockChanged;
             optionSection.OnRowChanged += OptionSection_OnRowChanged;
+            optionSection.OnError += OptionSection_OnError;
         }
         
         return sections;
+    }
+
+    private void OptionSection_OnError(object? sender, string error)
+    {
+        ShowMessage(error);
     }
 
     private void OptionSection_OnRowChanged(object? sender, RowEvent e)
@@ -186,7 +223,6 @@ public class OptionsLayer : IGameLayer
 
     public void HandleInput(IConsumableInput input)
     {
-        m_cursorPos = input.Manager.MousePosition;
         var section = m_sections[m_currentSectionIndex];
 
         if (m_locked)
@@ -221,7 +257,7 @@ public class OptionsLayer : IGameLayer
             if (input.ConsumeKeyPressed(Key.End))
                 section.SetToLastSelection();
 
-            bool scrollRequired = ScrollRequired(m_windowHeight, section);
+            bool scrollRequired = ScrollRequired(m_windowSize.Height, section);
             if (checkScroll && scrollRequired)
                 ScrollToVisibleArea(section);
 
@@ -229,11 +265,11 @@ public class OptionsLayer : IGameLayer
             {
                 int scrollAmount = GetScrollAmount();
                 m_scrollOffset += input.ConsumeScroll() * scrollAmount;
-                m_scrollOffset = Math.Min(0, m_scrollOffset);
+                m_scrollOffset = Math.Clamp(m_scrollOffset, -(section.GetRenderHeight() + m_headerHeight - m_windowSize.Height + scrollAmount), 0);
             }
 
             int buttonIndex = -1;
-            if (!m_locked && m_backForwardPos.GetRowIndexForMouse(m_cursorPos, out int checkButtonIndex) && input.ConsumeKeyPressed(Key.MouseLeft))
+            if (!m_locked && m_backForwardPos.GetIndex(m_cursorPos, out int checkButtonIndex) && input.ConsumeKeyPressed(Key.MouseLeft))
                 buttonIndex = checkButtonIndex;
 
             section.HandleInput(input);
@@ -244,6 +280,7 @@ public class OptionsLayer : IGameLayer
                 m_scrollOffset = 0;
                 section.SetToFirstSelection();
                 m_currentSectionIndex = (m_currentSectionIndex + m_sections.Count - 1) % m_sections.Count;
+                m_sections[m_currentSectionIndex].OnShow();
             }
 
             if (input.ConsumePressOrContinuousHold(Key.Right) || input.ConsumePressOrContinuousHold(Key.MouseCustom5) || buttonIndex == ForwardIndex)
@@ -252,6 +289,7 @@ public class OptionsLayer : IGameLayer
                 m_scrollOffset = 0;
                 section.SetToFirstSelection();
                 m_currentSectionIndex = (m_currentSectionIndex + 1) % m_sections.Count;
+                m_sections[m_currentSectionIndex].OnShow();
             }
         }
 
@@ -263,9 +301,9 @@ public class OptionsLayer : IGameLayer
     {
         int scrollAmount = GetScrollAmount();
         (int startY, int endY) = section.GetSelectedRenderY();
-        if (endY + m_headerHeight > Math.Abs(m_scrollOffset) + m_windowHeight)
+        if (endY + m_headerHeight > Math.Abs(m_scrollOffset) + m_windowSize.Height)
         {
-            m_scrollOffset = (endY + m_headerHeight - m_windowHeight);
+            m_scrollOffset = (endY + m_headerHeight - m_windowSize.Height);
             m_scrollOffset = -(int)Math.Ceiling((m_scrollOffset / (double)scrollAmount)) * scrollAmount;
         }
 
@@ -306,16 +344,19 @@ public class OptionsLayer : IGameLayer
 
     public void Render(IRenderableSurfaceContext ctx, IHudRenderContext hud)
     {
+        m_windowSize = hud.Dimension;
         m_backForwardPos.Clear();
         ctx.ClearDepth();
         hud.Clear(Color.Gray);
+
+        SetMouseFromRender(hud);
+
         FillBackgroundRepeatingImages(ctx, hud);
+
         int fontSize = m_config.Hud.GetMediumFontSize();
         int smallPad = m_config.Hud.GetScaled(2);
         hud.Text($"{m_currentSectionIndex + 1}/{m_sections.Count}", Fonts.SmallGray, fontSize, (smallPad, smallPad),
             out _, both: Align.TopLeft, color: Color.Red);
-
-        m_windowHeight = hud.Dimension.Height;
 
         m_headerHeight = 0;
         int y = m_scrollOffset;
@@ -326,8 +367,8 @@ public class OptionsLayer : IGameLayer
         if (m_sections.Count > 1)
         {
             int xOffset = (hud.Dimension.Width - titleArea.Dimension.Width) / 2;
-            int yOffset = (m_headerHeight / 2) - (titleArea.Dimension.Height / 2);
             var arrowSize = hud.MeasureText("<-", Fonts.SmallGray, fontSize);
+            int yOffset = (titleArea.Dimension.Height / 2) - (arrowSize.Height / 2);
             Vec2I backArrowPos = (xOffset - arrowSize.Width - padding, titleArea.TopLeft.Y + yOffset);
             Vec2I forwardArrowPos = (xOffset + titleArea.Dimension.Width + padding, titleArea.TopRight.Y + yOffset);
             hud.Text("<-", Fonts.SmallGray, fontSize, backArrowPos, color: Color.White);
@@ -342,9 +383,6 @@ public class OptionsLayer : IGameLayer
         m_headerHeight += pageInstrArea.Height + m_config.Hud.GetScaled(16);
         y += m_headerHeight;
 
-        if (m_message.Length > 0)
-            hud.Text(m_message, Fonts.SmallGray, fontSize, (0, -padding), both: Align.BottomMiddle, color: Color.Yellow);
-
         if (m_currentSectionIndex < m_sections.Count)
         {
             var section = m_sections[m_currentSectionIndex];
@@ -355,7 +393,7 @@ public class OptionsLayer : IGameLayer
             if (m_locked)
                 return;
 
-            bool hover = section.OnClickableItem(m_cursorPos) || m_backForwardPos.GetRowIndexForMouse(m_cursorPos, out _);
+            bool hover = section.OnClickableItem(m_cursorPos) || m_backForwardPos.GetIndex(m_cursorPos, out _);
 
             string cursor = hover ? "pointer" : "cursor";
             if (hud.Textures.TryGet(cursor, out var cursorHandle, ResourceNamespace.Graphics))
@@ -365,8 +403,36 @@ public class OptionsLayer : IGameLayer
                 hud.Image(cursor, m_cursorPos, resourceNamespace: ResourceNamespace.Graphics, scale: scale);
             }
         }
-        else        
+        else
             hud.Text("Unexpected error: no config or keys", Fonts.Small, fontSize, (0, y), out _, both: Align.TopMiddle);
+
+
+        if (m_message.Length > 0)
+            hud.Text(m_message, Fonts.SmallGray, fontSize, (0, -padding), both: Align.BottomMiddle, color: Color.Yellow);
+    }
+
+    private void SetMouseFromRender(IHudRenderContext hud)
+    {
+        bool set = false;
+
+        if (m_resetMouse)
+        {
+            ResetMousePosition(hud);
+            m_resetMouse = false;
+            set = true;
+        }
+
+        if (m_setMouse)
+        {
+            m_window.SetMousePosition(m_cursorPos);
+            m_setMouse = false;
+            set = true;
+        }
+
+        if (set)
+            return;
+
+        m_cursorPos = m_window.InputManager.MousePosition; 
     }
 
     private void RenderScrollBar(IHudRenderContext hud, int fontSize, IOptionSection section)

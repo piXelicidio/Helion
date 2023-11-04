@@ -32,10 +32,11 @@ public class ListedConfigSection : IOptionSection
     public event EventHandler<LockEvent>? OnLockChanged;
     public event EventHandler<RowEvent>? OnRowChanged;
     public event EventHandler<ConfigInfoAttribute>? OnAttributeChanged;
+    public event EventHandler<string>? OnError;
 
     public OptionSectionType OptionType { get; }
     private readonly List<(IConfigValue CfgValue, OptionMenuAttribute Attr, ConfigInfoAttribute ConfigAttr)> m_configValues = new();
-    private readonly MenuPositionList m_menuPositionList = new();
+    private readonly BoxList m_menuPositionList = new();
     private readonly IConfig m_config;
     private readonly SoundManager m_soundManager;
     private readonly Stopwatch m_stopwatch = new();
@@ -71,7 +72,7 @@ public class ListedConfigSection : IOptionSection
     public void ResetSelection() => m_currentRowIndex = 0;
 
     public bool OnClickableItem(Vec2I mousePosition) =>
-        m_menuPositionList.GetRowIndexForMouse(mousePosition, out _);
+        m_menuPositionList.GetIndex(mousePosition, out _);
 
     public void Add(IConfigValue value, OptionMenuAttribute attr, ConfigInfoAttribute configAttr)
     {
@@ -96,7 +97,7 @@ public class ListedConfigSection : IOptionSection
             {
                 m_updateMouse = false;
                 m_mousePos = input.Manager.MousePosition;
-                if (m_menuPositionList.GetRowIndexForMouse(m_mousePos, out int rowIndex))
+                if (m_menuPositionList.GetIndex(m_mousePos, out int rowIndex))
                     m_currentRowIndex = rowIndex;
             }
 
@@ -108,8 +109,12 @@ public class ListedConfigSection : IOptionSection
             bool mousePress = input.ConsumeKeyPressed(Key.MouseLeft);
             if (mousePress || input.ConsumeKeyPressed(Key.Enter))
             {
-                if (mousePress && m_menuPositionList.GetRowIndexForMouse(input.Manager.MousePosition, out int rowIndex))
+                if (mousePress)
+                {
+                    if (!m_menuPositionList.GetIndex(input.Manager.MousePosition, out int rowIndex))
+                        return;
                     m_currentRowIndex = rowIndex;
+                }
 
                 var configData = m_configValues[m_currentRowIndex];
                 m_soundManager.PlayStaticSound(MenuSounds.Choose);
@@ -165,7 +170,7 @@ public class ListedConfigSection : IOptionSection
         bool left = input.ConsumeKeyPressed(Key.Left);
         bool right = input.ConsumeKeyPressed(Key.Right);
         int scroll = input.ConsumeScroll();
-        if (!left && !right && scroll == 0) 
+        if (m_currentEnumIndex.HasValue && !left && !right && scroll == 0) 
             return;
         
         object currentEnumValue = cfgValue.ObjectValue;
@@ -327,6 +332,8 @@ public class ListedConfigSection : IOptionSection
 
         if (result == ConfigSetResult.Set)
             OnAttributeChanged?.Invoke(this, configAttr);
+        else if (result != ConfigSetResult.Unchanged)
+            OnError?.Invoke(this, "Enter a valid value");
 
         Log.ConditionalTrace($"Config value with '{newValue}'for update result: {result}");
         m_currentEditValue = null;
@@ -496,6 +503,7 @@ public class ListedConfigSection : IOptionSection
         return cfgValue.OptionDisabled || attr.Disabled;
     }
     
+    public void OnShow() { }
     public int GetRenderHeight() => m_renderHeight;
     public (int, int) GetSelectedRenderY() => m_selectedRender;
     public void SetToFirstSelection() => m_currentRowIndex = 0;
