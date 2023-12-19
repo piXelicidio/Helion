@@ -20,6 +20,7 @@ public struct Vec2 :
     IEqualityOperators<Vec2, Vec2, bool>,
     ICreatable2<float, float, Vec2>,
     IConvertTo<Vec2>,
+    IInverse<Vec2>,
     IMin<Vec2>,
     IMinGeneric<Vec2>,
     IMax<Vec2>,
@@ -32,6 +33,7 @@ public struct Vec2 :
     IUnit<Vec2>,
     INormalize,
     IDot2<Vec2, float>,
+    ICross2<Vec2, float>,
     ILerp<Vec2, float, Vec2>,
     IComponent<Vec2, float>,
     IProject<Vec2, Vec2>
@@ -100,6 +102,9 @@ public struct Vec2 :
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly Vec2 ConvertTo() => this;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly Vec2 Inverse() => new(1.0f / m_vector.X, 1.0f / m_vector.Y);
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly Vec2 Min(in Vec2 other) => new(Vector2.Min(m_vector, other.m_vector));
@@ -148,6 +153,12 @@ public struct Vec2 :
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly float Dot<TOtherVec>(in TOtherVec vec) where TOtherVec : IVector2<float> => (m_vector.X * vec.X) + (m_vector.Y * vec.Y);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public float Cross(in Vec2 other) => Vector2.Dot(m_vector, new(other.Y, -other.X));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public float Cross<TOtherVec>(in TOtherVec vec) where TOtherVec : IVector2<float> =>  (m_vector.X * vec.Y) - (m_vector.Y * vec.X);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly Vec2 Lerp(in Vec2 other, in float amount) => new(Vector2.Lerp(m_vector, other.m_vector, amount));
