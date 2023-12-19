@@ -17,6 +17,12 @@ public readonly record struct Box2(Vec2 Min, Vec2 Max) :
     IDivisionOperators<Box2, Vec2, Box2>,
     IDivisionOperators<Box2, float, Box2>,
     IEqualityOperators<Box2, Box2, bool>,
+    IBound<Vec2, Box2>,
+    IBound<Box2, Box2>,
+    IContains<Vec2>,
+    IContains<Box2>,
+    IOverlaps<Box2>,
+    ILerp<Vec2, float, Box2>,
     ILerp<Box2, float, Box2>
 {
     public static int Dimension => 2;
@@ -68,8 +74,14 @@ public readonly record struct Box2(Vec2 Min, Vec2 Max) :
     public bool Overlaps(in Box2 box) => Min.X < box.Max.X && Max.X > box.Min.X && Min.Y < box.Max.Y && Max.Y > box.Min.Y;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Box2 Combine(in Box2 box) => new(Min.Min(box.Min), Max.Max(box.Max));
+    public Box2 Bound(in Vec2 point) => new(Min.Min(point), Max.Max(point));
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Box2 Bound(in Box2 box) => new(Min.Min(box.Min), Max.Max(box.Max));
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Box2 Lerp(in Vec2 centerTarget, in float amount) => this + Center.Lerp(centerTarget, amount);
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Box2 Lerp(in Box2 other, in float amount) => (Min.Lerp(other.Min, amount), Max.Lerp(other.Max, amount));
 

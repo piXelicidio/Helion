@@ -1,10 +1,11 @@
 ﻿using System.Numerics;
+using Helion.Geometry.New.Segments;
 using Helion.Geometry.New.Vectors;
 using static Helion.Geometry.New.MathHelper;
 
-namespace Helion.Geometry.New.Segments.Algorithms;
+namespace Helion.Geometry.New.Algorithms;
 
-public static class Intersections
+public static class SegmentIntersections
 {
     public static F Intersection<F, TVec, TSeg>(this TSeg self, in TSeg seg)
         where F : IFloatingPoint<F>, IFloatingPointIeee754<F>
@@ -24,7 +25,7 @@ public static class Intersections
 
         return F.NaN;
     }
-    
+
     public static bool Intersects<F, TVec, TSeg>(this TSeg self, in TSeg seg, out F t)
         where F : IFloatingPoint<F>, IFloatingPointIeee754<F>
         where TVec : IVector2<F>
@@ -32,5 +33,5 @@ public static class Intersections
     {
         t = self.Intersection<F, TVec, TSeg>(seg);
         return t.InNormalRangeExclusive();
-    }
+    }   
 }

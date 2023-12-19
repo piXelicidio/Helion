@@ -1,7 +1,8 @@
 ﻿using System.Numerics;
+using Helion.Geometry.New.Boxes;
 using Helion.Geometry.New.Interfaces;
 
-namespace Helion.Geometry.New.Boxes.Algorithms;
+namespace Helion.Geometry.New.Algorithms;
 
 public static class Bounding
 {

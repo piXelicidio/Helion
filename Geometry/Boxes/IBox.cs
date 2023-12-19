@@ -19,5 +19,3 @@ public interface IBox3<TVec, F> : IBox<TVec> where TVec : IVector3<F> where F : 
 {
     F Volume { get; }
 }
-
-public interface IBox4<TVec, F> : IBox<TVec> where TVec : IVector4<F> where F : INumber<F>;

@@ -7,18 +7,25 @@
         <AssemblyName>Helion.Geometry.New</AssemblyName>
         <RootNamespace>Helion.Geometry.New</RootNamespace>
         <LangVersion>preview</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
       <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+      <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
       <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+      <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Core\Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Graphs\" />
     </ItemGroup>
 
 </Project>
