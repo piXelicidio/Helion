@@ -1,6 +1,5 @@
 using Helion.Models;
 using System;
-using System.Runtime.CompilerServices;
 
 namespace Helion.World.Entities.Definition.Flags;
 
@@ -83,6 +82,8 @@ public struct EntityFlags
     public bool Bright { get => (Flags3 & FlagValue.Flag4) != 0; set { if (value) Flags3 |= FlagValue.Flag4; else Flags3 &= FlagValue.InvFlag4; } }
     public bool IsTeleportSpot { get => (Flags3 & FlagValue.Flag5) != 0; set { if (value) Flags3 |= FlagValue.Flag5; else Flags3 &= FlagValue.InvFlag5; } }
     public bool WeaponNoAutofire { get => (Flags3 & FlagValue.Flag6) != 0; set { if (value) Flags3 |= FlagValue.Flag6; else Flags3 &= FlagValue.InvFlag6; } }
+    public bool IgnoreDropOff { get => (Flags3 & FlagValue.Flag7) != 0; set { if (value) Flags3 |= FlagValue.Flag7; else Flags3 &= FlagValue.InvFlag7; } }
+    public bool MonsterMove { get => (Flags3 & FlagValue.Flag8) != 0; set { if (value) Flags3 |= FlagValue.Flag8; else Flags3 &= FlagValue.InvFlag8; } }
 
     public EntityFlags(EntityFlagsModel model)
     {

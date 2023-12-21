@@ -32,7 +32,6 @@ public class Sector
     public readonly SectorPlane Floor;
     public readonly SectorPlane Ceiling;
     public readonly List<Line> Lines = new();
-    public readonly List<Side> Sides = new();
     public readonly LinkableList<Entity> Entities = new();
     public readonly List<BspSubsector> Subsectors = new();
     public List<LinkableNode<Sector>> BlockmapNodes = new();
@@ -66,7 +65,7 @@ public class Sector
     public bool MarkAutomap;
     public int ActivatedByLineId = -1;
     public WeakEntity SoundTarget { get; private set; } = WeakEntity.Default;
-    public readonly InstantKillEffect KillEffect;
+    public InstantKillEffect KillEffect { get; private set; }
     public SectorEffect SectorEffect { get; private set; }
 
     public double Friction = Constants.DefaultFriction;
@@ -212,6 +211,15 @@ public class Sector
 
         SectorEffect = effect;
         DataChanges |= SectorDataTypes.SectorEffect;
+    }
+
+    public void SetKillEffect(InstantKillEffect effect)
+    {
+        if (KillEffect == effect)
+            return;
+
+        KillEffect = effect;
+        DataChanges |= SectorDataTypes.KillEffect;
     }
 
     public void PlaneTextureChange(SectorPlane sectorPlane)
@@ -762,5 +770,19 @@ public class Sector
         }
 
         BlockmapNodes.Clear();
+    }
+
+    public void ApplyTriggerChanges(IWorld world, TriggerChanges changes, SectorPlaneFace planeType, bool transferSpecial)
+    {
+        if (changes.Texture.HasValue)
+            world.SetPlaneTexture(GetSectorPlane(planeType), changes.Texture.Value);
+        if (transferSpecial)
+        {
+            SectorDamageSpecial = changes.DamageSpecial?.Copy(this);
+            if (changes.SectorEffect.HasValue)
+                SetSectorEffect(changes.SectorEffect.Value);
+            if (changes.KillEffect.HasValue)
+                SetKillEffect(changes.KillEffect.Value);
+        }
     }
 }

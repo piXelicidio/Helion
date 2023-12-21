@@ -21,7 +21,6 @@ using Helion.Util.Profiling;
 using Helion.Window;
 using static Helion.Util.Assertion.Assert;
 using static Helion.World.Entities.EntityManager;
-using Helion.Util.Container;
 using Helion.Util.RandomGenerators;
 using Helion.World.Geometry.Islands;
 using Helion.World.Geometry.Lines;
@@ -451,7 +450,10 @@ public class SinglePlayerWorld : WorldBase
             player.AddToYaw(moveDelta.X, true);
 
             if ((Config.Mouse.Look && !MapInfo.HasOption(MapOptions.NoFreelook)) || IsChaseCamMode)
-                player.AddToPitch(moveDelta.Y, true);
+            {
+                float factorY = Config.Mouse.InvertY ? -1 : 1;
+                player.AddToPitch(moveDelta.Y * factorY, true);
+            }
         }
     }
 }

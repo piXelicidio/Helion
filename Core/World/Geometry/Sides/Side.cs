@@ -1,7 +1,6 @@
 using Helion.Geometry.Vectors;
 using Helion.Maps.Specials;
 using Helion.Render.OpenGL.Renderers.Legacy.World;
-using Helion.Render.OpenGL.Renderers.Legacy.World.Geometry.Static;
 using Helion.World.Geometry.Lines;
 using Helion.World.Geometry.Sectors;
 using Helion.World.Geometry.Walls;
@@ -55,7 +54,6 @@ public class Side : IRenderObject
         upper.Side = this;
         middle.Side = this;
         lower.Side = this;
-        sector.Sides.Add(this);
 
         // We are okay with things blowing up violently if someone forgets
         // to assign it, because that is such a critical error on the part

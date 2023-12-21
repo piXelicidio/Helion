@@ -29,9 +29,9 @@ public class SectorMoveSpecial : ISectorSpecial
     public bool IsInitialMove { get; protected set; } = true;
     public virtual bool MultiSector => false;
     public virtual IEnumerable<(Sector, SectorPlane)> GetSectors() => Array.Empty<(Sector, SectorPlane)>();
+    public double DestZ { get; protected set; }
 
     protected readonly IWorld m_world;
-    protected double DestZ;
 
     private double m_startZ;
     private double m_minZ;
@@ -247,6 +247,9 @@ public class SectorMoveSpecial : ISectorSpecial
 
             if (MoveData.SectorEffect != null)
                 Sector.SetSectorEffect(MoveData.SectorEffect.Value);
+
+            if (MoveData.KillEffect != null)
+                Sector.SetKillEffect(MoveData.KillEffect.Value);
 
             StopMovementSound();
             Sector.ClearActiveMoveSpecial(MoveData.SectorMoveType);

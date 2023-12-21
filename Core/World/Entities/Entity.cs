@@ -22,7 +22,6 @@ using System;
 using System.Diagnostics;
 using static Helion.Util.Assertion.Assert;
 using Helion.World.Blockmap;
-using Helion.World;
 
 namespace Helion.World.Entities;
 
@@ -789,13 +788,16 @@ public partial class Entity : IDisposable, ITickable, ISoundSource, IRenderObjec
         if (Flags.Float || Flags.Dropoff)
             return false;
 
-        // Only allow for non-monster things. Currently the physics code allows monsters to easily get stuck.
-        // There are boom maps that require item movement like this (e.g. Fractured Worlds MAP03 red key BFG)
-        if (WorldStatic.AllowItemDropoff)
-            return Definition.Properties.Health > 0 && Definition.SeeState.HasValue;
+        if (!WorldStatic.AllowItemDropoff)
+            return true;
 
-        return true;
+        if (IsBoomSentient && Flags.MonsterMove)
+            return true;
+
+        return !Flags.IgnoreDropOff;
     }
+
+    public bool IsBoomSentient => Definition.Properties.Health > 0 && Definition.SeeState.HasValue;
 
     public bool CheckDropOff(TryMoveData tryMove)
     {
@@ -963,6 +965,7 @@ public partial class Entity : IDisposable, ITickable, ISoundSource, IRenderObjec
         else
         {
             Flags.Corpse = true;
+            Flags.Dropoff = true;
             Flags.Skullfly = false;
             Flags.Shootable = false;
             if (!Flags.DontFall)

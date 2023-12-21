@@ -384,12 +384,12 @@ public class SpecialManager : ITickable, IDisposable
     public ISpecial CreateFloorLowerSpecialChangeTextureAndType(Sector sector, SectorDest sectorDest, double speed)
     {
         double destZ = GetDestZ(sector, SectorPlaneFace.Floor, sectorDest);
-        TriggerSpecials.GetNumericModelChange(m_world, sector, SectorPlaneFace.Floor, destZ,
-            out int floorChangeTexture, out SectorDamageSpecial? damageSpecial, out var sectorEffect);
+        TriggerSpecials.GetNumericModelChange(m_world, sector, SectorPlaneFace.Floor, destZ, sectorDest,
+            out var changes);
 
         return new SectorMoveSpecial(m_world, sector, sector.Floor.Z, destZ, new SectorMoveData(SectorPlaneFace.Floor,
-            MoveDirection.Down, MoveRepetition.None, speed, 0, floorChangeTextureHandle: floorChangeTexture,
-            damageSpecial: damageSpecial, sectorEffect: sectorEffect),
+            MoveDirection.Down, MoveRepetition.None, speed, 0, floorChangeTextureHandle: changes.Texture,
+            damageSpecial: changes.DamageSpecial, sectorEffect: changes.SectorEffect, killEffect: changes.KillEffect),
             DefaultFloorSound);
     }
 
@@ -407,53 +407,38 @@ public class SpecialManager : ITickable, IDisposable
         if (start == MoveDirection.Down && sectorDest == SectorDest.HighestAdjacentFloor)
             destZ -= amount;
 
-        int? changeTexture = null;
-        SectorDamageSpecial? damageSpecial = null;
+        TriggerChanges triggerChanges = new();
         CrushData? crush = null;
-        SectorEffect? sectorEffect = null;
 
         if ((flags & ZDoomGenericFlags.CopyTxAndSpecial) != 0)
         {
             if ((flags & ZDoomGenericFlags.TriggerNumericModel) != 0)
             {
-                if (TriggerSpecials.GetNumericModelChange(m_world, sector, planeType, destZ,
-                    out int numericChangeTexture, out SectorDamageSpecial? changeSpecial, out var changeSectorEffect))
-                {
-                    changeTexture = numericChangeTexture;
-                    damageSpecial = changeSpecial;
-                    sectorEffect = changeSectorEffect;
-                }
+                if (TriggerSpecials.GetNumericModelChange(m_world, sector, planeType, destZ, sectorDest, out var changes))
+                    triggerChanges = changes;
             }
             else
             {
-                changeTexture = line.Front.Sector.GetTexture(planeType);
-                damageSpecial = line.Front.Sector.SectorDamageSpecial;
-                sectorEffect = line.Front.Sector.SectorEffect;
+                triggerChanges = new TriggerChanges(line, planeType);
             }
 
             ZDoomGenericFlags changeFlags = flags & ZDoomGenericFlags.CopyTxAndSpecial;
-            if (changeFlags == ZDoomGenericFlags.CopyTxRemoveSpecial || damageSpecial == null)
-                damageSpecial = SectorDamageSpecial.CreateNoDamage(m_world, sector);
+            if (changeFlags == ZDoomGenericFlags.CopyTxRemoveSpecial || triggerChanges.DamageSpecial == null)
+                triggerChanges.DamageSpecial = SectorDamageSpecial.CreateNoDamage(m_world, sector);
             else if (changeFlags == ZDoomGenericFlags.CopyTx)
-                damageSpecial = null;
+                triggerChanges.DamageSpecial = null;
         }
 
         if ((flags & ZDoomGenericFlags.Crush) != 0)
             crush = planeType == SectorPlaneFace.Floor ? CrushData.BoomDefaultFloor : CrushData.BoomDefaultCeiling;
 
-        int? floorChangeTexture = null;
-        int? ceilingChangeTexture = null;
-        if (planeType == SectorPlaneFace.Floor)
-            floorChangeTexture = changeTexture;
-        else
-            ceilingChangeTexture = changeTexture;
-
         return new SectorMoveSpecial(m_world, sector, startZ, destZ, new SectorMoveData(planeType,
             start, MoveRepetition.None, speed, 0, crush: crush,
-            floorChangeTextureHandle: floorChangeTexture,
-            ceilingChangeTextureHandle: ceilingChangeTexture,
-            damageSpecial: damageSpecial,
-            sectorEffect: sectorEffect),
+            floorChangeTextureHandle: planeType == SectorPlaneFace.Floor ? triggerChanges.Texture : null,
+            ceilingChangeTextureHandle: planeType == SectorPlaneFace.Ceiling ? triggerChanges.Texture : null,
+            damageSpecial: triggerChanges.DamageSpecial,
+            sectorEffect: triggerChanges.SectorEffect,
+            killEffect: triggerChanges.KillEffect),
             planeType == SectorPlaneFace.Floor ? DefaultFloorSound : DefaultCeilingSound);
     }
 
@@ -568,19 +553,19 @@ public class SpecialManager : ITickable, IDisposable
         switch (line.Special.LineSpecialType)
         {
             case ZDoomLineSpecialType.ScrollTextureLeft:
-                AddSpecial(new ScrollSpecial(m_world, line, new Vec2D(line.Args.Arg0 * VisualScrollFactor, 0.0), (ZDoomLineScroll)line.Args.Arg1));
+                AddSpecial(new ScrollSpecial(line, new Vec2D(line.Args.Arg0 * VisualScrollFactor, 0.0), (ZDoomLineScroll)line.Args.Arg1));
                 break;
             case ZDoomLineSpecialType.ScrollTextureRight:
-                AddSpecial(new ScrollSpecial(m_world, line, new Vec2D(line.Args.Arg0 * -VisualScrollFactor, 0.0), (ZDoomLineScroll)line.Args.Arg1));
+                AddSpecial(new ScrollSpecial(line, new Vec2D(line.Args.Arg0 * -VisualScrollFactor, 0.0), (ZDoomLineScroll)line.Args.Arg1));
                 break;
             case ZDoomLineSpecialType.ScrollTextureUp:
-                AddSpecial(new ScrollSpecial(m_world, line, new Vec2D(0.0, line.Args.Arg0 * VisualScrollFactor), (ZDoomLineScroll)line.Args.Arg1));
+                AddSpecial(new ScrollSpecial(line, new Vec2D(0.0, line.Args.Arg0 * VisualScrollFactor), (ZDoomLineScroll)line.Args.Arg1));
                 break;
             case ZDoomLineSpecialType.ScrollTextureDown:
-                AddSpecial(new ScrollSpecial(m_world, line, new Vec2D(0.0, line.Args.Arg0 * -VisualScrollFactor), (ZDoomLineScroll)line.Args.Arg1));
+                AddSpecial(new ScrollSpecial(line, new Vec2D(0.0, line.Args.Arg0 * -VisualScrollFactor), (ZDoomLineScroll)line.Args.Arg1));
                 break;
             case ZDoomLineSpecialType.ScrollUsingTextureOffsets:
-                AddSpecial(new ScrollSpecial(m_world, line, new Vec2D(-line.Front.Offset.X, line.Front.Offset.Y), ZDoomLineScroll.All));
+                AddSpecial(new ScrollSpecial(line, new Vec2D(-line.Front.Offset.X, line.Front.Offset.Y), ZDoomLineScroll.All));
                 break;
             case ZDoomLineSpecialType.ScrollTextureModel:
                 CreateScrollTextureModel(line);
@@ -736,7 +721,7 @@ public class SpecialManager : ITickable, IDisposable
                 if (!speeds.ScrollSpeed.HasValue)
                     continue;
 
-                AddSpecial(new ScrollSpecial(m_world, line, speeds.ScrollSpeed.Value, 
+                AddSpecial(new ScrollSpecial(line, speeds.ScrollSpeed.Value, 
                     ZDoomLineScroll.All, accelSector: changeScroll, scrollFlags: flags));
                 continue;
             }
@@ -746,7 +731,7 @@ public class SpecialManager : ITickable, IDisposable
                 if (!speeds.ScrollSpeed.HasValue)
                     continue;
 
-                AddSpecial(new ScrollSpecial(m_world, line, speeds.ScrollSpeed.Value, 
+                AddSpecial(new ScrollSpecial(line, speeds.ScrollSpeed.Value, 
                     ZDoomLineScroll.All, accelSector: changeScroll, scrollFlags: flags));
             }
         }
@@ -785,11 +770,11 @@ public class SpecialManager : ITickable, IDisposable
             {
                 Vec2D scrollSpeed = speeds.ScrollSpeed.Value;
                 scrollSpeed.X = -scrollSpeed.X;
-                AddSpecial(new ScrollSpecial(m_world, ScrollType.Scroll, sectorPlane, scrollSpeed, changeScroll, flags));
+                AddSpecial(new ScrollSpecial(ScrollType.Scroll, sectorPlane, scrollSpeed, changeScroll, flags));
             }
 
             if (speeds.CarrySpeed.HasValue)
-                AddSpecial(new ScrollSpecial(m_world, ScrollType.Carry, sectorPlane, speeds.CarrySpeed.Value, changeScroll, flags));
+                AddSpecial(new ScrollSpecial(ScrollType.Carry, sectorPlane, speeds.CarrySpeed.Value, changeScroll, flags));
         }
     }
 
