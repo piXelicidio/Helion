@@ -4,21 +4,26 @@ using Helion.Geometry.New.Vectors;
 
 namespace Helion.Geometry.New.Polygons;
 
-public class Polygon2<F, TVec>(TVec[] vertices) : IReadOnlyList<TVec> 
+public abstract class Polygon2<F, TVec> : IReadOnlyList<TVec> 
     where F : INumber<F>
     where TVec : IVector2<F> 
 {
-    private readonly TVec[] m_vertices = vertices;
+    protected readonly TVec[] Vertices;
 
-    public int Count => m_vertices.Length;
-    public ReadOnlySpan<TVec> Span => m_vertices;
+    public int Count => Vertices.Length;
+    public ReadOnlySpan<TVec> Span => Vertices;
 
-    public Polygon2(IEnumerable<TVec> vertexEnumerable) : this(vertexEnumerable.ToArray())
+    protected Polygon2(TVec[] vertices)
+    {
+        Vertices = vertices;
+    }
+
+    protected Polygon2(IEnumerable<TVec> vertices) : this(vertices.ToArray())
     {
     }
 
-    public TVec this[int index] => m_vertices[index];
+    public TVec this[int index] => Vertices[index];
 
-    public IEnumerator<TVec> GetEnumerator() => (IEnumerator<TVec>)vertices.GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => vertices.GetEnumerator();
+    public IEnumerator<TVec> GetEnumerator() => (IEnumerator<TVec>)Vertices.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => Vertices.GetEnumerator();
 }

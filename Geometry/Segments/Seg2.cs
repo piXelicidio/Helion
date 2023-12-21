@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Helion.Geometry.New.Algorithms;
 using Helion.Geometry.New.Boxes;
+using Helion.Geometry.New.Circles;
 using Helion.Geometry.New.Interfaces;
 using Helion.Geometry.New.Vectors;
-using Helion.Util.Extensions;
 
 namespace Helion.Geometry.New.Segments;
 
@@ -37,16 +37,16 @@ public struct Seg2 :
 
     public Vec2 Start => m_start;
     public Vec2 End => m_end;
+    public Vec2 Delta => End - Start;
+    public Vec2 Middle => (Start + End) * 0.5f;
+    public Box2 Box => (Start.Min(End), Start.Max(End));
+    public Circle2 Circle => new(Start, Delta.Length()); 
 
     public Seg2(Vec2 start, Vec2 end)
     {
         m_start = start;
         m_end = end;
     }
-    
-    public Vec2 Delta => End - Start;
-    public Vec2 Middle => (Start + End) * 0.5f;
-    public Box2 Box => (Start.Min(End), Start.Max(End));
     
     public Seg2(float startX, float startY, float endX, float endY) : this((startX, startY), (endX, endY))
     {
@@ -91,7 +91,7 @@ public struct Seg2 :
     public Vec2 FromTime(in float t) => Start + (Delta * t);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public float ToTime(in Vec2 point) => Start.X.ApproxEquals(End.X) ? (point.Y - Start.Y) / (End.Y - Start.Y) : (point.X - Start.X) / (End.X - Start.X);
+    public float ToTime(in Vec2 point) => Start.X.ApproxEqual(End.X) ? (point.Y - Start.Y) / (End.Y - Start.Y) : (point.X - Start.X) / (End.X - Start.X);
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Vec2 ClosestPoint(in Vec2 point)

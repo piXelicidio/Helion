@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using Helion.Geometry.New.Algorithms;
+using Helion.Geometry.New.Boxes;
 using Helion.Geometry.New.Segments;
 using Helion.Geometry.New.Triangles;
 using Helion.Geometry.New.Vectors;
@@ -25,11 +27,10 @@ public readonly ref struct ConvexPolygon2f
                 return false;
         return true;
     }
-    
-    public IEnumerable<Triangle2f> GetTriangles() 
+
+    public Box2 CalculateBox()
     {
-        for (int i = 1; i < Vertices.Length - 2; i++)
-            yield return new(Vertices[0], Vertices[i], Vertices[i + 1]);
+        return Bounding.BoundPoints<Vec2, Vec2, Box2>(Vertices);
     }
     
     public void GetTriangles(Span<Triangle2f> triangles) 
