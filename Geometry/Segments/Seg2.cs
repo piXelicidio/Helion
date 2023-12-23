@@ -23,6 +23,7 @@ public struct Seg2 :
     IPerpDot<Vec2, float>,
     IOnRight<Vec2>,
     IOnRight<Seg2>,
+    IClockwiseSortAngle<Vec2, float>,
     IFromTime<Vec2, float>,
     IClosestPoint<Vec2, Vec2>,
     IIntersects<Seg2>,
@@ -87,6 +88,9 @@ public struct Seg2 :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool OnRight(in Seg2 seg) => OnRight(seg.Start) && OnRight(seg.End);
     
+    // This might be too large to inline, let the compiler decide.
+    public float CalculateClockwiseSortAngle(in Vec2 point) => SortingAngle.CalculateCosTheta<float, Vec2, Vec2>(Start, End, point);
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Vec2 FromTime(in float t) => Start + (Delta * t);
 

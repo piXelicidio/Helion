@@ -11,19 +11,25 @@ public static class MathHelper
     {
         return F.Abs(f) < F.Epsilon;
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ApproxEqual<F>(this F a, in F b) where F : IFloatingPointIeee754<F>
     {
         return F.Abs(a - b) < F.Epsilon;
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool DifferentSign<F>(this F a, in F b) where F : IFloatingPoint<F>
     {
         return a * b < F.Zero;
     }
-    
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static F NegativeSign<F>(this F a, F b) where F : IFloatingPoint<F>
+    {
+        return a.DifferentSign(b) ? F.NegativeOne : F.Zero;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static F Clamp<F>(this F value, in F min, in F max) where F : IComparisonOperators<F, F, bool>
     {
