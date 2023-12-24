@@ -9,6 +9,8 @@ namespace Helion.Geometry.New.Graphs.Algorithms;
 
 public static class GeometricGraphWalker
 {
+    // Will aggressively walk clockwise and return each edge it encounters.
+    // This either assumes that you
     private static IEnumerable<TEdge> WalkClockwiseGreedy<F, TVertex, TEdge>(this IGeometricGraph2<F, TVertex, TEdge> graph,
             TEdge startingEdge, Func<TEdge, bool> shouldWalk, INodeVisitTracker<TVertex> visitTracker)
         where F : struct, INumber<F>, IMinMaxValue<F>
@@ -25,7 +27,7 @@ public static class GeometricGraphWalker
         TVertex current = startingEdge.End;
         TEdge prevEdge = startingEdge;
 
-        visitTracker.MarkVisited(startingEdge.End);
+        visitTracker.MarkVisited(current);
 
         while (current != start)
         {
@@ -42,8 +44,6 @@ public static class GeometricGraphWalker
                 if (firstWalk && edge.End == start)
                     continue;
                 
-                // We made it back to the start. This has to come before the next
-                // conditional because we already marked `start`.
                 if (!shouldWalk(edge) || visitTracker.WasVisited(edge.End))
                     continue;
 

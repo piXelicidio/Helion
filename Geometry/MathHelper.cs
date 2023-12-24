@@ -7,6 +7,14 @@ namespace Helion.Geometry.New;
 public static class MathHelper
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int ToIntFast(this bool b)
+    {
+        // There are a lot of instructions generated from `Convert.ToInt32(bool)`,
+        // but this is just one instruction when the JIT is done with it.
+        return Unsafe.As<bool, byte>(ref b);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ApproxZero<F>(this F f) where F : IFloatingPointIeee754<F>
     {
         return F.Abs(f) < F.Epsilon;
