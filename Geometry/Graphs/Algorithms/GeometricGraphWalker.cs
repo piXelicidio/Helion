@@ -2,20 +2,19 @@
 using System.Numerics;
 using Helion.Geometry.New.Graphs.Visitor;
 using Helion.Geometry.New.Interfaces;
-using Helion.Geometry.New.Segments;
-using Helion.Geometry.New.Vectors;
 
 namespace Helion.Geometry.New.Graphs.Algorithms;
 
 public static class GeometricGraphWalker
 {
     // Will aggressively walk clockwise and return each edge it encounters.
-    // This either assumes that you
-    private static IEnumerable<TEdge> WalkClockwiseGreedy<F, TVertex, TEdge>(this IGeometricGraph2<F, TVertex, TEdge> graph,
-            TEdge startingEdge, Func<TEdge, bool> shouldWalk, INodeVisitTracker<TVertex> visitTracker)
+    private static IEnumerable<TEdge> WalkClockwiseGreedy<F, TVertex, TEdge, TEdgeSource, TNodeVisitTracker>(this TEdgeSource graph,
+            TEdge startingEdge, Func<TEdge, bool> shouldWalk, TNodeVisitTracker visitTracker)
         where F : struct, INumber<F>, IMinMaxValue<F>
-        where TVertex : IVector2<F>, IEqualityOperators<TVertex, TVertex, bool>
-        where TEdge : ISeg2<TVertex, F>, IClockwiseSortAngle<TVertex, F>
+        where TVertex : IEqualityOperators<TVertex, TVertex, bool>
+        where TEdge : IEdge<TVertex>, IClockwiseSortAngle<TVertex, F>
+        where TEdgeSource : IEdgeSource<TVertex, TEdge>
+        where TNodeVisitTracker : INodeVisitTracker<TVertex>
     {
         Debug.Assert(!visitTracker.WasVisited(startingEdge.Start), "Already visited start when doing clockwise greedy walk");
         Debug.Assert(!visitTracker.WasVisited(startingEdge.End), "Already visited end when doing clockwise greedy walk");
@@ -34,7 +33,7 @@ public static class GeometricGraphWalker
             TEdge? edgeToWalk = default;
             F bestSortAngle = F.MaxValue;
             
-            foreach (TEdge edge in graph.GetExitingEdges(current))
+            foreach (TEdge edge in graph.GetEdges(current))
             {
                 // Due to the state we track, don't walk back to the start on our
                 // first walk. It's probably the case that a bidirectional graph
