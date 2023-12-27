@@ -9,6 +9,7 @@ namespace Helion.Render.OpenGL.Renderers.Legacy.World.Geometry.Portals.FloodFill
 public class FloodFillProgram : RenderProgram
 {
     private readonly int m_boundTextureLocation;
+    private readonly int m_sectorLightTextureLocation;
     private readonly int m_cameraLocation;
     private readonly int m_mvpLocation;
     private readonly int m_timeFracLocation;
@@ -21,17 +22,19 @@ public class FloodFillProgram : RenderProgram
     public FloodFillProgram() : base("Flood fill plane")
     {
         m_boundTextureLocation = Uniforms.GetLocation("boundTexture");
+        m_sectorLightTextureLocation = Uniforms.GetLocation("sectorLightTexture");
         m_cameraLocation = Uniforms.GetLocation("camera");
         m_mvpLocation = Uniforms.GetLocation("mvp");
         m_timeFracLocation = Uniforms.GetLocation("timeFrac");
         m_hasInvulnerabilityLocation = Uniforms.GetLocation("hasInvulnerability");
         m_mvpNoPitchLocation = Uniforms.GetLocation("mvpNoPitch");
         m_lightLevelMixLocation = Uniforms.GetLocation("lightLevelMix");
+        m_extraLightLocation = Uniforms.GetLocation("extraLight");
         m_distanceOffsetLocation = Uniforms.GetLocation("distanceOffset");
     }
 
     public void BoundTexture(TextureUnit unit) => Uniforms.Set(unit, m_boundTextureLocation);
-    public void SectorLightTexture(TextureUnit unit) => Uniforms.Set(unit, "sectorLightTexture");
+    public void SectorLightTexture(TextureUnit unit) => Uniforms.Set(unit, m_sectorLightTextureLocation);
 
     public void Camera(Vec3F camera) => Uniforms.Set(camera, m_cameraLocation);
     public void Mvp(mat4 mvp) => Uniforms.Set(mvp, m_mvpLocation);
@@ -111,10 +114,10 @@ public class FloodFillProgram : RenderProgram
             vec2 uv = vec2(planePos.x / texDim.x, planePos.y / texDim.y);
 
             uv.y = -uv.y; // Vanilla textures are drawn top-down.
-            fragColor = texture(boundTexture, uv);
 
             float dist = (mvpNoPitch * vec4(planePos, 1.0)).z;
             ${LightLevelFragFunction}
+            fragColor = texture(boundTexture, uv);
             fragColor.xyz *= lightLevel;
 
             // If invulnerable, grayscale everything and crank the brightness.

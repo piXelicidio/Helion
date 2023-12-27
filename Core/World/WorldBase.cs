@@ -1016,10 +1016,13 @@ public abstract class WorldBase : IWorld
         if (projectile.Flags.Randomize)
             projectile.SetRandomizeTicks();
 
-        if (projectile.Flags.NoClip)
-            return projectile;
-
         Vec3D velocity = Vec3D.UnitSphere(angle, pitch) * projectile.Properties.MissileMovementSpeed;
+        if (projectile.Flags.NoClip)
+        {
+            projectile.Velocity = velocity;
+            return projectile;
+        }
+        
         Vec3D testPos = projectile.Position;
         if (projectile.Properties.MissileMovementSpeed > 0)
             testPos += Vec3D.UnitSphere(angle, pitch) * (shooter.Radius - 2.0);
@@ -2086,13 +2089,15 @@ public abstract class WorldBase : IWorld
             }
         }
 
+        bool isActive = player.Cheats.IsCheatActive(cheat.CheatType);
         switch (cheat.CheatType)
         {
             case CheatType.NoClip:
-                player.Flags.NoClip = player.Cheats.IsCheatActive(cheat.CheatType);
+                player.Flags.NoClip = isActive;
                 break;
             case CheatType.Fly:
-                player.Flags.NoGravity = player.Cheats.IsCheatActive(cheat.CheatType);
+                player.Flags.Fly = isActive;
+                player.Flags.NoGravity = isActive;
                 break;
             case CheatType.Kill:
                 ClearConsole?.Invoke(this, EventArgs.Empty);
@@ -2110,7 +2115,7 @@ public abstract class WorldBase : IWorld
             case CheatType.God:
                 if (!player.IsDead)
                     SetGodModeHealth(player);
-                player.Flags.Invulnerable = player.Cheats.IsCheatActive(cheat.CheatType);
+                player.Flags.Invulnerable = isActive;
                 break;
             case CheatType.GiveAllNoKeys:
                 GiveAllWeapons(player);

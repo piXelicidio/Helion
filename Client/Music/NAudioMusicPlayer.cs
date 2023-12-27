@@ -33,12 +33,14 @@ public class NAudioMusicPlayer : IMusicPlayer
         }
         catch
         {
-
+            return false;
         }
-        return false;
     }
 
-    public bool Play(byte[] data, bool loop = true, bool ignoreAlreadyPlaying = true)
+    public static bool IsOgg(byte[] data) =>
+        data.Length > 3 && data[0] == 'O' && data[1] == 'g' && data[2] == 'g';
+
+    public bool Play(byte[] data, MusicPlayerOptions options)
     {
         if (m_disposed)
             return false;
@@ -49,9 +51,11 @@ public class NAudioMusicPlayer : IMusicPlayer
             NAudioMusicType.Mp3 => new Mp3FileReader(stream),
             _ => new NAudio.Vorbis.VorbisWaveReader(stream),
         };
+
+        var playStream = options.HasFlag(MusicPlayerOptions.Loop) ? new LoopStream(audioStream) : audioStream;
         m_waveOut = new WaveOutEvent();
         m_waveOut.Stop();
-        m_waveOut.Init(audioStream);
+        m_waveOut.Init(playStream);
 
         try
         {
