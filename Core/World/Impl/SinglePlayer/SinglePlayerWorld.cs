@@ -265,7 +265,7 @@ public class SinglePlayerWorld : WorldBase
         m_automapMarker.Start(this);
     }
 
-    public static bool daPlayLevelMusic(IConfig config, IAudioSystem audioSystem, string entryName, ArchiveCollection archiveCollection)
+    public static bool PlayLevelMusic(IConfig config, IAudioSystem audioSystem, string entryName, ArchiveCollection archiveCollection)
     {
         if (string.IsNullOrWhiteSpace(entryName))
             return false;
