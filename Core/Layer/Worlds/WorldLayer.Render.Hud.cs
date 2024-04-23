@@ -478,9 +478,9 @@ public partial class WorldLayer
 
     private void DrawCrosshair(IHudRenderContext hud)
     {
-        int Width = Math.Max((int)(1 * m_scale), 1);
+        int Width = Math.Max((int)(1 * m_scale * 1f), 1);
         int HalfWidth = Math.Max(Width / 2, 1);
-        int Length = (int)(5 * m_scale);
+        int Length = (int)(5 * m_scale * 1f);
 
         Color color = Player.CrosshairTarget.Entity == null ? Color.LawnGreen : Color.Red;
         int crosshairLength = Player.CrosshairTarget.Entity == null ? Length : (int)(Length * 0.8f);
@@ -502,10 +502,13 @@ public partial class WorldLayer
         else
         {
             HalfWidth *= 2;
-        }            
+        }
 
-        hud.FillBox((horizontal.X, horizontal.Y, horizontal.X + totalCrosshairLength, horizontal.Y + HalfWidth), color);
-        hud.FillBox((vertical.X, vertical.Y, vertical.X + HalfWidth, vertical.Y + totalCrosshairLength), color);
+        var lengthFraction = totalCrosshairLength / 4;
+        hud.FillBox((horizontal.X, horizontal.Y, horizontal.X + lengthFraction, horizontal.Y + HalfWidth), color, alpha: 0.5f);
+        hud.FillBox((horizontal.X + totalCrosshairLength - lengthFraction, horizontal.Y, horizontal.X + totalCrosshairLength, horizontal.Y + HalfWidth), color, alpha: 0.5f);
+        hud.FillBox((vertical.X, vertical.Y, vertical.X + HalfWidth, vertical.Y + lengthFraction), color, alpha: 0.5f);        
+        hud.FillBox((vertical.X, vertical.Y + totalCrosshairLength - lengthFraction, vertical.X + HalfWidth, vertical.Y + totalCrosshairLength), color, alpha: 0.5f);
     }
 
     private void DrawMinimalStatusBar(IHudRenderContext hud, int topRightY)
