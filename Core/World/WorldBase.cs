@@ -693,11 +693,11 @@ public abstract class WorldBase : IWorld
             player.HandleTickCommand();
             player.TickCommand.TickHandled();
 
-            if (player.Sector.Secret && player.OnSectorFloorZ(player.Sector))
+            if (player.Sector.Secret && player.OnSectorFloorZ(player.Sector) && !player.Sector.SecretFound)
             {
                 DisplayMessage(player, null, "$SECRETMESSAGE");
                 SoundManager.PlayStaticSound("misc/secret");
-                player.Sector.SetSecret(false);
+                player.Sector.SetSecretFound(true);
                 LevelStats.SecretCount++;
                 player.SecretsFound++;
             }

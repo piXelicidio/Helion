@@ -268,7 +268,11 @@ public class LegacyAutomapRenderer : IDisposable
             return GetMarkedColor(world);
 
         if (line.SeenForAutomap || forceDraw)
-            return AutomapColor.White;
+        {
+            if (line.Front.Sector.SecretFound) return AutomapColor.Purple;            
+            else
+                return AutomapColor.White;
+        }
 
         return AutomapColor.LightBlue;
     }
@@ -279,7 +283,7 @@ public class LegacyAutomapRenderer : IDisposable
             return GetMarkedColor(world);
 
         if (line.HasSpecial && line.Special.IsTeleport())
-            return AutomapColor.Green;
+            return AutomapColor.Green;              
 
         return AutomapColor.Gray;
     }

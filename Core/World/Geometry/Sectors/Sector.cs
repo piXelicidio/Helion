@@ -64,6 +64,7 @@ public class Sector
     public SectorPlaneFace LastActivePlaneMove;
     public ZDoomSectorSpecialType SectorSpecialType { get; private set; }
     public bool Secret => (SectorEffect & SectorEffect.Secret) != 0;
+    public bool SecretFound { get; private set; }
     public int DamageAmount { get; private set; }
     public int? SkyTextureHandle { get; private set; }
     public bool FlipSkyTexture { get; set; } = true;
@@ -106,6 +107,7 @@ public class Sector
         DamageAmount = sectorData.DamageAmount;
         KillEffect = sectorData.InstantKillEffect;
         SectorEffect = sectorData.SectorEffect;
+        SecretFound = false;
 
         floor.Sector = this;
         ceiling.Sector = this;
@@ -221,6 +223,11 @@ public class Sector
         else
             SectorEffect &= ~SectorEffect.Secret;
         DataChanges |= SectorDataTypes.SectorEffect;
+    }
+
+    public void SetSecretFound(bool set)
+    {
+        SecretFound = set;
     }
 
     public void SetSectorEffect(SectorEffect effect)
