@@ -227,7 +227,10 @@ public class Sector
 
     public void SetSecretFound(bool set)
     {
+        if (set == SecretFound) return;
+
         SecretFound = set;
+        DataChanges |= SectorDataTypes.SectorEffect;
     }
 
     public void SetSectorEffect(SectorEffect effect)
@@ -314,6 +317,7 @@ public class Sector
             }
 
             sectorModel.Secret = Secret;
+            sectorModel.SecretFound = SecretFound;
             sectorModel.DamageAmount = DamageAmount;
         }
 
@@ -387,6 +391,8 @@ public class Sector
                 SetSecret(sectorModel.Secret.Value);
             if (sectorModel.SectorEffect.HasValue)
                 SetSectorEffect(sectorModel.SectorEffect.Value);
+            if (sectorModel.SecretFound.HasValue)
+                SetSecretFound(sectorModel.SecretFound.Value);
 
             DamageAmount = sectorModel.DamageAmount;
         }

@@ -23,6 +23,7 @@ public class SectorModel
     public int? SectorSpecialType;
     public int? SkyTexture;
     public bool? Secret;
+    public bool? SecretFound;
     public int DamageAmount;
     public int? TransferFloorLight;
     public int? TransferCeilingLight;
