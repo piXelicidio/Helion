@@ -41,6 +41,8 @@ public class PowerupBase : IPowerup
             PowerupColor = GetColor(EntityDefinition.Properties.Powerup.Color);
             DrawColor = PowerupColor;
             PowerupAlpha = (float)EntityDefinition.Properties.Powerup.Color.Alpha;
+            //TODO: The berserk red alpha is killing me, reducing alpha. Maybe try to change the effect to color multipy instead of and alpha layers that is what looks like.
+            if (PowerupType == PowerupType.Strength) PowerupAlpha = PowerupAlpha / 2f;
             DrawAlpha = PowerupAlpha;
         }
 
