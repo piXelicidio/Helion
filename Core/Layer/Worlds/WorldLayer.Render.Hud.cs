@@ -300,13 +300,14 @@ public partial class WorldLayer
         DrawCoordinate(hud, 'X', Player.Position.X, ref topRightY);
         DrawCoordinate(hud, 'Y', Player.Position.Y, ref topRightY);
         DrawCoordinate(hud, 'Z', Player.Position.Z, ref topRightY);
-        DrawCoordinate(hud, 'A', Player.AngleRadians * 180 / Math.PI, ref topRightY);
+        DrawCoordinate(hud, 'A', Player.AngleRadians % Math.PI * 180 / MathHelper.Pi, ref topRightY);
+        DrawCoordinate(hud, 'P', Player.PitchRadians % Math.PI * 180 / MathHelper.Pi, ref topRightY);
         topRightY += m_padding;
     }
 
     void DrawCoordinate(IHudRenderContext hud, char axis, double position, ref int y)
     {
-        hud.Text($"{axis}: {Math.Round(position, 4)}", ConsoleFont, m_infoFontSize,
+        hud.Text($"{axis}: {Math.Floor(position * 10000)/10000}", ConsoleFont, m_infoFontSize,
             (-m_padding - m_hudPaddingX, y), out Dimension area, TextAlign.Right, both: Align.TopRight,
             color: Color.White);
         y += area.Height + FpsMessageSpacing;
@@ -480,10 +481,12 @@ public partial class WorldLayer
     {
         int Width = Math.Max((int)(1 * m_scale * 1f), 1);
         int HalfWidth = Math.Max(Width / 2, 1);
-        int Length = (int)(5 * m_scale * 1f);
 
-        Color color = Player.CrosshairTarget.Entity == null ? Color.LawnGreen : Color.Red;
-        int crosshairLength = Player.CrosshairTarget.Entity == null ? Length : (int)(Length * 0.8f);
+        int Length = (int)(5 * m_scale * m_config.Hud.CrosshairScale.Value);
+
+        bool target = Player.CrosshairTarget.Entity != null;
+        var color = target ? ToColor(m_config.Hud.CrosshairTargetColor.Value) : ToColor(m_config.Hud.CrosshairColor);
+        int crosshairLength = target ? (int)(Length * 0.8f) : Length ;
         int totalCrosshairLength = crosshairLength * 2;
         if (Width == 1)
             totalCrosshairLength += 1;
@@ -504,12 +507,45 @@ public partial class WorldLayer
             HalfWidth *= 2;
         }
 
-        var lengthFraction = totalCrosshairLength / 4;
-        hud.FillBox((horizontal.X, horizontal.Y, horizontal.X + lengthFraction, horizontal.Y + HalfWidth), color, alpha: 0.5f);
-        hud.FillBox((horizontal.X + totalCrosshairLength - lengthFraction, horizontal.Y, horizontal.X + totalCrosshairLength, horizontal.Y + HalfWidth), color, alpha: 0.5f);
-        hud.FillBox((vertical.X, vertical.Y, vertical.X + HalfWidth, vertical.Y + lengthFraction), color, alpha: 0.5f);        
-        hud.FillBox((vertical.X, vertical.Y + totalCrosshairLength - lengthFraction, vertical.X + HalfWidth, vertical.Y + totalCrosshairLength), color, alpha: 0.5f);
+        float alpha = 1f - (float)m_config.Hud.CrosshairTransparency;
+        var lengthFraction = totalCrosshairLength;
+        switch (m_config.Hud.CrosshairType.Value)
+        {
+            case CrosshairStyle.Cross1:
+                lengthFraction /= 3;
+                hud.FillBox((horizontal.X, horizontal.Y, horizontal.X + lengthFraction, horizontal.Y + HalfWidth), color, alpha: alpha);
+                hud.FillBox((horizontal.X + totalCrosshairLength - lengthFraction, horizontal.Y, horizontal.X + totalCrosshairLength, horizontal.Y + HalfWidth), color, alpha: alpha);
+                hud.FillBox((vertical.X, vertical.Y, vertical.X + HalfWidth, vertical.Y + lengthFraction), color, alpha: alpha);
+                hud.FillBox((vertical.X, vertical.Y + totalCrosshairLength - lengthFraction, vertical.X + HalfWidth, vertical.Y + totalCrosshairLength), color, alpha: alpha);
+                break;
+            case CrosshairStyle.Cross2:
+                lengthFraction = lengthFraction / 2 - 2;
+                hud.FillBox((horizontal.X, horizontal.Y, horizontal.X + lengthFraction, horizontal.Y + HalfWidth), color, alpha: alpha);
+                hud.FillBox((horizontal.X + totalCrosshairLength - lengthFraction, horizontal.Y, horizontal.X + totalCrosshairLength, horizontal.Y + HalfWidth), color, alpha: alpha);
+                hud.FillBox((vertical.X, vertical.Y, vertical.X + HalfWidth, vertical.Y + lengthFraction), color, alpha: alpha);
+                hud.FillBox((vertical.X, vertical.Y + totalCrosshairLength - lengthFraction, vertical.X + HalfWidth, vertical.Y + totalCrosshairLength), color, alpha: alpha);
+                break;
+            case CrosshairStyle.Cross3:
+                hud.FillBox((horizontal.X, horizontal.Y, horizontal.X + totalCrosshairLength, horizontal.Y + HalfWidth), color, alpha: alpha);
+                hud.FillBox((vertical.X, vertical.Y, vertical.X + HalfWidth, vertical.Y + totalCrosshairLength), color, alpha: alpha);
+                break;
+            case CrosshairStyle.Dot:
+                var size = target ? 1 : 1.5;
+                totalCrosshairLength = Math.Max((int)(size * m_scale * m_config.Hud.CrosshairScale.Value), 1);
+                hud.FillBox((center.X, center.Y, center.X + totalCrosshairLength, center.Y + totalCrosshairLength), color, alpha: alpha);
+                break;
+        }
+
     }
+
+    private static Color ToColor(CrossColor c) => c switch
+    {
+        CrossColor.Green => Color.LawnGreen,
+        CrossColor.Blue => Color.Blue,
+        CrossColor.Red => Color.Red,
+        CrossColor.Yellow => Color.Yellow,
+        _ => Color.White
+    };
 
     private void DrawMinimalStatusBar(IHudRenderContext hud, int topRightY)
     {
