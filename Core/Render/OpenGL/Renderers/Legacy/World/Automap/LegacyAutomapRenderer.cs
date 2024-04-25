@@ -274,7 +274,7 @@ public class LegacyAutomapRenderer : IDisposable
                 return AutomapColor.White;
         }
 
-        return AutomapColor.LightBlue;
+        return AutomapColor.Blue;
     }
 
     private static AutomapColor GetTwoSidedColor(IWorld world, Line line, bool marked)
@@ -282,10 +282,15 @@ public class LegacyAutomapRenderer : IDisposable
         if (marked)
             return GetMarkedColor(world);
 
-        if (line.HasSpecial && line.Special.IsTeleport())
-            return AutomapColor.Green;              
+        if (line.SeenForAutomap)
+        {
+            if (line.HasSpecial && line.Special.IsTeleport())
+                return AutomapColor.Green;
 
-        return AutomapColor.Gray;
+            return AutomapColor.Gray;
+        }
+
+        return AutomapColor.Blue;
     }
 
     private static AutomapColor GetMarkedColor(IWorld world)
